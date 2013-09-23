@@ -19,8 +19,8 @@ from collections import defaultdict
 
 
 SERVER = 'http://ts4.travian.net/'
-USERNAME = ''
-PASSWORD = ''
+USERNAME = 'Sir Bimbo'
+PASSWORD = 'tr4v14n'
 
 
 class Farm:
@@ -48,7 +48,7 @@ class Farm:
                     return False
             return True
         else:
-            "No es tiempo de atacar a este todavia"
+            print "Las tropas deben estar en camino"
             return False
 
     def attack(self):
