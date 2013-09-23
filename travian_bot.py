@@ -53,7 +53,7 @@ class Farm:
 
     def attack(self):
         """ Attack the farm """
-        print "Planeando ataque a (" + self.x + "|" + self.y + ")"
+        print "Ataque a (" + self.x + "|" + self.y + "): ",
         if self.can_attack():
             commands.go(SERVER + 'build.php?tt=2&id=39')
             commands.fv('2', 'x', self.x)
@@ -69,7 +69,7 @@ class Farm:
             t = re.search('[0-9][0-9]?:[0-9]{2}:[0-9]{2}', t).group(0)
             h, m, s = t.split(':')
             self.next_attack = datetime.datetime.now() + \
-                datetime.timedelta(seconds=int(s), minutes=int(m) + 2, hours=int(h))
+                datetime.timedelta(seconds=2 * int(s), minutes=2 * int(m) + 2, hours=2 * int(h))
             commands.fv('2', 's1', 'ok')
             print "Enviado ataque...",
             commands.submit()
@@ -159,7 +159,7 @@ class TravianBot:
             print "al ataque!"
             self.attack_farms()
             print "me voy a dormir, regreso en 1 min... zzzz"
-            time.sleep(60)
+            time.sleep(300)
 
 
 if __name__ == '__main__':
