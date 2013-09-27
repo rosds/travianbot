@@ -19,8 +19,8 @@ from collections import defaultdict
 
 
 SERVER = 'http://ts4.travian.net/'
-USERNAME = 'Sir Bimbo'
-PASSWORD = 'tr4v14n'
+USERNAME = ''
+PASSWORD = ''
 
 
 class Farm:
@@ -33,27 +33,36 @@ class Farm:
         self.troops = dict([troop.split(':') for troop in info[2:]])
         self.next_attack = datetime.datetime.now()
 
+    def get_id(self):
+        """ return the coordinates of the farm as a id string """
+        return self.x + "|" + self.y
+
+    def attacking(self):
+        """ Returns true if the farm is being attacked """
+        if datetime.datetime.now() > self.next_attack:
+            return False
+        else:
+            return True
+
     def can_attack(self):
         """ Determine if it is possible to attack """
-        if datetime.datetime.now() > self.next_attack:
+        if not self.attacking():
             commands.go(SERVER + 'build.php?tt=2&id=39')
             html = commands.show()
             soup = BeautifulSoup(html)
             for troop, num in self.troops.items():
                 link = soup.find('a', {'onclick': re.compile('.*\.' + troop + '\..*')})
-                if link and link.text > int(num):
-                    continue
-                else:
-                    print "tropas insuficientes :("
+                if not link or int(link.text) < int(num):
+                    print "Not enought troops to attack"
                     return False
             return True
         else:
-            print "Las tropas deben estar en camino"
+            print "This farm is being attacked"
             return False
 
     def attack(self):
         """ Attack the farm """
-        print "Ataque a (" + self.x + "|" + self.y + "): ",
+        print "Attack (" + self.x + "|" + self.y + "): ",
         if self.can_attack():
             commands.go(SERVER + 'build.php?tt=2&id=39')
             commands.fv('2', 'x', self.x)
@@ -67,17 +76,16 @@ class Farm:
             soup = BeautifulSoup(html)
             t = soup.find('div', {'class': 'in'}).text
             t = re.search('[0-9][0-9]?:[0-9]{2}:[0-9]{2}', t).group(0)
-            h, m, s = t.split(':')
-            self.next_attack = datetime.datetime.now() + \
-                datetime.timedelta(seconds=2 * int(s), minutes=2 * int(m) + 2, hours=2 * int(h))
+            h, m, s = [2 * int(e) for e in t.split(':')]
+            wait = datetime.timedelta(seconds=s, minutes=m, hours=h)
+            self.next_attack = datetime.datetime.now() + wait
             commands.fv('2', 's1', 'ok')
-            print "Enviado ataque...",
             commands.submit()
             print "done"
 
-    def __str__(self):
+    def __repr__(self):
         """ Print the coordinate of the farm """
-        return '(%d|%d)' % (self.x, self.y)
+        return '(' + self.get_id() + ')'
 
 
 class TravianBot:
@@ -142,9 +150,19 @@ class TravianBot:
         f = open("farms.txt")
         farm_list = []
         for line in f.readlines():
-            farm_list.append(Farm(line))
+            if line[0] == '#':
+                continue
+            farm_list.append(self.update_farm(Farm(line)))
         self.farms = farm_list
         f.close()
+
+    def update_farm(self, farm):
+        """ Update the farm list """
+        for f in self.farms:
+            if farm.get_id() == f.get_id():
+                farm.next_attack = f.next_attack
+                return farm
+        return farm
 
     def attack_farms(self):
         """ Attack all the farms """
@@ -153,13 +171,13 @@ class TravianBot:
 
     def start(self):
         """ Starts the bot """
-        self.read_farms_file()
-        print "A las armaaaaaaas!!!"
+        print "Travianbot v0.1"
         while True:
-            print "al ataque!"
+            self.read_farms_file()
             self.attack_farms()
-            print "me voy a dormir, regreso en 1 min... zzzz"
+            print "waiting 5 min"
             time.sleep(300)
+            self.login()
 
 
 if __name__ == '__main__':
